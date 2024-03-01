@@ -1,0 +1,368 @@
+#include <map>
+#include <random>
+#include <cmath>
+#include <algorithm>
+#include <memory> // For std::shared_ptr
+
+class FractionalDimension {
+public:
+ FractionalDimension(double whole = 0.0, double fractional = 0.0)
+   : whole_(whole), fractional_(fractional) {}
+
+ // Getter and setter methods for whole and fractional parts
+ double getWhole() const { return whole_; }
+ void setWhole(double value) { whole_ = value; }
+
+ double getFractional() const { return fractional_; }
+ void setFractional(double value) { fractional_ = value; }
+
+private:
+ double whole_;
+ double fractional_;
+};
+
+class NestedDimension {
+public:
+ NestedDimension(double value) : value_(value) {}
+
+ // Add a nested dimension (child)
+ std::shared_ptr<NestedDimension> addNestedDimension(double value) {
+  children_.emplace_back(value);
+  return children_.back();
+ }
+
+ // Get the value of this dimension
+ double getValue() const { return value_; }
+
+private:
+ double value_;
+ std::vector<std::shared_ptr<NestedDimension>> children_; // List of child dimensions
+};
+
+class LightSpectrum {
+private:
+ std::map<double, double> wavelengths_; // Map to store (wavelength, intensity) pairs
+ std::mt19937 generator_;
+ std::normal_distribution<double> distribution_;
+ bool autoAddWavelengths_ = false; // Initialized to false
+
+public:
+ explicit LightSpectrum(const std::map<double, double>& spectrum)
+   : wavelengths_(spectrum), distribution_(0.0, 1.0) {
+  std::random_device rd;
+  generator_ = std::mt19937(rd());
+ }
+
+class InfiniteNumberSystem {
+private:
+ // Use a variant type to store different data types based on needs
+ std::variant<double, FractionalDimension, LightSpectrum, std::shared_ptr<NestedDimension>> data_;
+
+public:
+ InfiniteNumberSystem(const std::map<std::string, std::variant<double, FractionalDimension, LightSpectrum, std::shared_ptr<NestedDimension>>>& initial_data)
+   : data_(initial_data) {}
+
+ // Methods for accessing and manipulating data
+ double getDoubleValue(const std::string& dimension_name) const {
+  if (std::holds_alternative<double>(data_)) {
+   return std::get<double>(data_);
+  } else {
+   throw std::runtime_error("Dimension does not hold a double value");
+  }
+ }
+
+ FractionalDimension getFractionalDimension(const std::string& dimension_name) const {
+  if (std::holds_alternative<FractionalDimension>(data_)) {
+   return std::get<FractionalDimension>(data_);
+  } else {
+   throw std::runtime_error("Dimension does not hold a FractionalDimension value");
+  }
+ }
+
+ LightSpectrum getLightSpectrum(const std::string& dimension_name) const {
+  if (std::holds_alternative<LightSpectrum>(data_)) {
+   return std::get<LightSpectrum>(data_);
+  } else {
+   throw std::runtime_error("Dimension does not hold a LightSpectrum value");
+  }
+ }
+
+ std::shared_ptr<NestedDimension> getNestedDimension(const std::string& dimension_name) const {
+  if (std::holds_alternative<std::shared_ptr<NestedDimension>>>(data_)) {
+   return std::get<std::shared_ptr<NestedDimension>>(data_);
+  } else {
+   throw std::runtime_error("Dimension does not hold a NestedDimension value");
+  }
+ }
+
+
+ // Error handling for missing wavelength (can be further customized)
+ double GetIntensity(double wavelength) const {
+  try {
+   return wavelengths_.at(wavelength);
+  } catch (const std::out_of_range& e) {
+   // Handle missing wavelength (e.g., log error, return default value)
+   return 0.0;
+  }
+ }
+
+// Add intensity at a specific wavelength
+void AddIntensity(double wavelength, double intensity) {
+ try {
+  wavelengths_[wavelength] += intensity;
+ } catch (const std::out_of_range& e) {
+  // Handle missing wavelength (e.g., log error, create entry with new intensity)
+  wavelengths_[wavelength] = intensity;
+ }
+}
+
+// Subtract intensity at a specific wavelength (ensure non-negative intensity)
+void SubtractIntensity(double wavelength, double intensity) {
+ try {
+  double currentIntensity = wavelengths_.at(wavelength);
+  wavelengths_[wavelength] = std::max(0.0, currentIntensity - intensity);
+ } catch (const std::out_of_range& e) {
+  // Handle missing wavelength (e.g., ignore, log error)
+ }
+}
+
+// Multiply intensity at a specific wavelength
+void MultiplyIntensity(double wavelength, double factor) {
+ try {
+  wavelengths_[wavelength] *= factor;
+ } catch (const std_out_of_range& e) {
+  // Handle missing wavelength (e.g., ignore, log error)
+ }
+}
+
+// Logical AND operation on two LightSpectrum objects (element-wise)
+LightSpectrum LogicalAND(const LightSpectrum& other) const {
+ std::map<double, double> result;
+ for (const auto& [wavelength, intensity] : wavelengths_) {
+  result[wavelength] = std::min(intensity, other.GetIntensity(wavelength));
+ }
+ return LightSpectrum(result);
+}
+
+// Logical OR operation on two LightSpectrum objects (element-wise)
+LightSpectrum LogicalOR(const LightSpectrum& other) const {
+ std::map<double, double> result;
+ for (const auto& [wavelength, intensity] : wavelengths_) {
+  result[wavelength] = std::max(intensity, other.GetIntensity(wavelength));
+ }
+ return LightSpectrum(result);
+}
+
+ // Gradient descent optimization (example for intensity)
+ void optimizeIntensity(double wavelength, double learningRate,
+             double (*costFunction)(double)) {
+  double currentIntensity = GetIntensity(wavelength);
+  double newIntensity = currentIntensity - learningRate * costFunction(currentIntensity);
+  SetIntensity(wavelength, newIntensity); // Update intensity using a setter method
+ }
+
+ // Setter method to update intensity (can be added for other properties)
+ void SetIntensity(double wavelength, double intensity) {
+  wavelengths_[wavelength] = intensity;
+ }
+
+ }
+
+ int CompareMagnitude(const InfiniteNumberSystem& other) const {
+ double self_magnitude = 0.0;
+ double other_magnitude = 0.0;
+ for (const auto& [name, value] : dimensions_) {
+  self_magnitude += std::pow(value, 2);
+  other_magnitude += std::pow(other.dimensions_.at(name), 2);
+ }
+ self_magnitude = std::sqrt(self_magnitude);
+ other_magnitude = std::sqrt(other_magnitude);
+
+ if (self_magnitude < other_magnitude) {
+  return -1;
+ } else if (self_magnitude > other_magnitude) {
+  return 1;
+ } else {
+  return 0;
+ }
+ }
+
+ void efficiencyEvolve() {
+ for (auto& dimension : dimensions_) {
+  dimension.second = optimize(dimension.second);
+ }
+ }
+
+ double costFunctionDerivative(double value) {
+ double dx = 0.0001;
+ return (costFunction(value + dx) - costFunction(value)) / dx;
+ }
+
+ double costFunction(double value) {
+ return value * value;
+ }
+
+ double optimize(double& value) {
+ double learningRate = 0.01;
+ value -= learningRate * costFunctionDerivative(value);
+ return value;
+ }
+
+ // Method to add a new dimension with the specified data type
+ void addDimension(const std::string& dimension_name, const std::variant<double, FractionalDimension, LightSpectrum, std::shared_ptr<NestedDimension>>& value) {
+  data_[dimension_name] = value;
+ }
+ // Method to get the color of a dimension
+ std::vector<std::string> GetColor(const std::string& dimension_name) {
+ return colors_[dimension_name];
+ }
+
+ // Method to get the shade of a dimension
+ std::vector<std::string> GetShade(const std::string& dimension_name) {
+ return shades_[dimension_name];
+ }
+
+ // Method to get the complexity of a dimension
+ std::bitset<512> GetComplexity(const std::string& dimension_name) {
+ return complexities_[dimension_name];
+ }
+};
+ // Method to add a new dimension
+ void addDimension(const std::string& dimensionName, double initialValue) {
+  dimensions[dimensionName] = initialValue;
+ }
+
+ // Method to toggle automatic addition of dimensions
+ void toggleAutoAddDimensions() {
+  autoAddDimensions = !autoAddDimensions;
+ }
+
+ // Method to automatically add dimensions
+ void autoAddDimensions(int numDimensions) {
+  if (autoAddDimensions) {
+   for (int i = 0; i < numDimensions; ++i) {
+    addDimension("autoDimension" + std::to_string(i), 0.0);
+   }
+  }
+ }
+
+ // Performs element-wise addition of two InfiniteNumberSystem objects
+ InfiniteNumberSystem operator+(const InfiniteNumberSystem& other) const {
+ std::map<std::string, double> result;
+ for (const auto& [name, value] : dimensions_) {
+  result[name] = value + other.dimensions_.at(name);
+ }
+ return InfiniteNumberSystem(result);
+ }
+InfiniteNumberSystem add(const InfiniteNumberSystem& other) {
+  std::map<std::string, double> result;
+  for (auto& dimension : data) {
+   result[dimension.first] = dimension.second + other.data.at(dimension.first);
+  }
+  return InfiniteNumberSystem(result);
+ }
+
+ InfiniteNumberSystem subtract(const InfiniteNumberSystem& other) {
+  std::map<std::string, double> result;
+  for (auto& dimension : data) {
+   result[dimension.first] = dimension.second - other.data.at(dimension.first);
+  }
+  return InfiniteNumberSystem(result);
+ }
+
+ InfiniteNumberSystem multiply(const InfiniteNumberSystem& other) {
+  std::map<std::string, double> result;
+  for (auto& dimension : data) {
+   result[dimension.first] = dimension.second * other.data.at(dimension.first);
+  }
+  return InfiniteNumberSystem(result);
+ }
+
+ InfiniteNumberSystem divide(const InfiniteNumberSystem& other) {
+  std::map<std::string, double> result;
+  for (auto& dimension : data) {
+   if (other.data.at(dimension.first) != 0) {
+    result[dimension.first] = dimension.second / other.data.at(dimension.first);
+   }
+  }
+  return InfiniteNumberSystem(result);
+ }
+ // Scales all dimensions by a factor
+ void Scale(double factor) {
+ for (auto& [_, value] : dimensions_) {
+  value *= factor;
+ }
+ }
+ // Compares the magnitudes of two InfiniteNumberSystem objects using Euclidean distance
+ int CompareMagnitude(const InfiniteNumberSystem& other) const {
+ double self_magnitude = 0.0;
+ double other_magnitude = 0.0;
+ for (const auto& [name, value] : dimensions_) {
+  self_magnitude += std::pow(value, 2);
+  other_magnitude += std::pow(other.dimensions_.at(name), 2);
+ }
+ self_magnitude = std::sqrt(self_magnitude);
+ other_magnitude = std::sqrt(other_magnitude);
+
+ if (self_magnitude < other_magnitude) {
+  return -1;
+ } else if (self_magnitude > other_magnitude) {
+  return 1;
+ } else {
+  return 0;
+ }
+ }
+// Method to optimize a value
+void optimize(double& value) {
+ // Define a learning rate
+ double learningRate = 0.01;
+
+ // Use a gradient descent algorithm to find the minimum of the cost function
+ value -= learningRate * costFunctionDerivative(value);
+}
+
+// Method to calculate the derivative of the cost function
+double costFunctionDerivative(double value) {
+ // Define a small change in x
+ double dx = 0.0001;
+
+ // Use the definition of the derivative to calculate the derivative of the cost function
+ return (costFunction(value + dx) - costFunction(value)) / dx;
+}
+
+// Method to calculate the cost function
+double costFunction(double value) {
+ // Use the square of the value as a simple cost function
+ return value * value;
+}
+
+// Override the efficiencyEvolve method
+void efficiencyEvolve() override {
+ // Iterate over each dimension
+ for (auto& dimension : data) {
+  // Adjust the value in this dimension to minimize the cost function
+  dimension.second = optimize(dimension.second);
+ }
+
+public:
+ InfiniteNumberSystem(std::map<std::string, double> dimensions) : dimensions(dimensions) {}
+
+ // Method to add a new dimension
+ void addDimension(const std::string& dimensionName, double initialValue) {
+  dimensions[dimensionName] = initialValue;
+ }
+
+ // Method to toggle automatic addition of dimensions
+ void toggleAutoAddDimensions() {
+  autoAddDimensions = !autoAddDimensions;
+ }
+
+ // Method to automatically add dimensions
+ void autoAddDimensions(int numDimensions) {
+  if (autoAddDimensions) {
+   for (int i = 0; i < numDimensions; ++i) {
+    addDimension("autoDimension" + std::to_string(i), 0.0);
+   }
+  }
+ }
+};
